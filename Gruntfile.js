@@ -110,25 +110,27 @@ module.exports = function(grunt) {
       }
     },
     "mozilla-addon-sdk": {
-      "1_14": {
-        options: { revision: "1.14" }
+      "1_14": { options: { revision: "1.14" } },
+      "devtools": {
+        options: { revision: "devtools-updated-volcan", github: true, github_user: "rpl" }
       }
     },
     "mozilla-cfx": {
       run: {
         options: {
-          "mozilla-addon-sdk": "1_14",
+          "mozilla-addon-sdk": "devtools",
           extension_dir: "dist/firefox",
           command: "run"
         }
       }
     },
     "mozilla-cfx-xpi": {
-      "1_15": {
+      "master": {
         options: {
-          "mozilla-addon-sdk": "1_14",
+          "mozilla-addon-sdk": "devtools",
           extension_dir: "dist/firefox",
-          dist_dir: "tmp/xpi"
+          dist_dir: "tmp/xpi",
+	  arguments: "--strip-sdk"
         }
       }
     },
