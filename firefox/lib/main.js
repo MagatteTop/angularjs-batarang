@@ -1,23 +1,112 @@
-var { Cu, Cc, Ci } = require("chrome");
+const { Panel } = require("dev/panel");
+const { Tool } = require("dev/toolbox");
+const { Class } = require("sdk/core/heritage");
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+const AngularBatarangPanel = Class({
+  extends: Panel,
+  name: "01",
+  label: "AngularJS",
+  tooltip: "Angular Batarang",
+  icon: "./img/webstore-icon.png",
+  url: "./devtool-panel.html",
+  setup: function({debuggee}) {
+    this.debuggee = debuggee;
+  },
+  dispose: function() {
+    delete this.debuggee;
+  },
+  onReady: function() {
+    this.debuggee.start();
+    this.postMessage("RDP", [this.debuggee]);
+  },
+});
+exports.AngularBatarangPanel = AngularBatarangPanel;
 
-// Register DevTools Tab
 
-Cu.import("resource:///modules/devtools/gDevTools.jsm");
+const angular = new Tool({
+  panels: { angular: AngularBatarangPanel }
+});
 
-let devtoolTabDefinition = require("./devtool-panel").devtoolTabDefinition;
+/************************************
+  CONTENT SCRIPT
+************************************/
 
-function startup() {
-  gDevTools.registerTool(devtoolTabDefinition);
+var pageMod = require("sdk/page-mod");
+
+var angularPageMod = pageMod.PageMod({
+  include: "*",
+  contentScriptFile: require("sdk/self").data.url("js/inject/debug.js"),
+  contentScriptWhen: 'start',
+  attachTo: ["existing", "top"],
+  onAttach: function(worker) {
+    console.log("attached to: " + worker.tab.url);
+  }
+});
+
+
+/************************************
+  SIDEBAR
+************************************/
+
+console.log("ASSIGNED TOOL ID", AngularBatarangPanel.prototype.id);
+
+const {
+  registerInspectorSidebar,
+  unregisterInspectorSidebar
+} = require("register-sidebar-addons");
+
+let { get: getPref, set: setPref } = require("sdk/preferences/service");
+
+let prefs = require("sdk/preferences/event-target").PrefsTarget({
+});
+
+prefs.on("devtools." + AngularBatarangPanel.prototype.id + ".enabled", function (name) {
+  let enabled = getPref(name);
+  console.log("DEVTOOLS ANGULAR TOGGLED", enabled);
+
+  if (enabled) {
+    activateSidebar();
+  } else {
+    deactivateSidebar();
+  }
+});
+
+setPref("devtools." + AngularBatarangPanel.prototype.id + ".enabled", true);
+
+function deactivateSidebar() {
+  unregisterInspectorSidebar("angular-batarang");
 }
 
-function shutdown() {
-  gDevTools.unregisterTool(devtoolTabDefinition);
+function activateSidebar() {
+  registerInspectorSidebar({
+    id: "angular-batarang",
+    label: "AngularJS",
+    evaluatedJavascriptFun: function getAngularPanelContents() {
+      if (window.angular && $0) {
+        // TODO: can we move this scope export into
+        // updateElementProperties
+        var scope = window.angular.element($0).scope();
+        // Export $scope to the console
+        window.$scope = scope;
+        return (function (scope) {
+          var panelContents = {
+            __private__: {}
+          };
+
+          for (prop in scope) {
+            if (scope.hasOwnProperty(prop)) {
+              if (prop.substr(0, 2) === '$$') {
+                panelContents.__private__[prop] = scope[prop];
+              } else {
+                panelContents[prop] = scope[prop];
+              }
+            }
+          }
+          return panelContents;
+        }(scope));
+      } else {
+        return {};
+      }
+    }
+  });
 }
-
-startup();
-
-exports.onUnload = function() {
-  shutdown();
-};

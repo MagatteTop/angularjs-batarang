@@ -19,8 +19,76 @@
         overflow: auto;
       }
     </style>
+    <script src="resource://sdk/dev/volcan.js"></script>
+    <script src="./task.js"></script>
   </head>
   <body>
-    <iframe src="panel.html"/>
+    <!-- iframe src="panel.html"/ -->
+
+  <script>
+    console.log("VOLCAN LOADED", volcan);
+
+    const wait = (target, type, capture) => new Promise((resolve, reject) => {
+      const listener = event => {
+        target.removeEventListener(type, listener, capture);
+        resolve(event);
+      };
+      target.addEventListener(type, listener, capture);
+    });
+
+    const display = message =>
+      document.body.innerHTML += message + "<br/>";
+
+    Task.spawn(function*() {
+      var event = yield wait(window, "message");
+      var port = event.ports[0];
+
+      display("Port received");
+      var root = yield volcan.connect(port);
+
+      display("Connected to a debugger");
+
+      var message = yield root.echo("hello")
+
+      display("Received echo for: " + message);
+
+      var list = yield root.listTabs();
+
+      display("You have " + list.tabs.length + " open tabs");
+
+      var activeTab = list.tabs[list.selected];
+
+      display("Your active tab url is: " + activeTab.url);
+
+      window.addEventListener("message", (panelEvent) => {
+        Task.spawn(function* () {
+          switch (panelEvent.data.requestName) {
+          case "target-eval":
+            var reply = yield activeTab.consoleActor.evaluateJS(
+              panelEvent.data.data.code,
+              window.location.toString());
+            panelEvent.source.postMessage({
+              id: panelEvent.data.id,
+              reply: reply.state.result.type === "undefined" ? null : JSON.parse(reply.state.result)
+            }, "*");
+            break;
+          default:
+            console.log("TODO PANEL EVENT", panelEvent);
+          }
+        });
+      });
+
+      var  iframe = document.createElement("iframe");
+      iframe.setAttribute("src", "panel.html");
+      document.body.appendChild(iframe);
+
+      /*
+      var sheets = yield activeTab.styleSheetsActor.getStyleSheets();
+
+      display("Page in active tab has " + sheets.length + " stylesheets");
+      */
+    });
+  </script>
+
   </body>
 </html>

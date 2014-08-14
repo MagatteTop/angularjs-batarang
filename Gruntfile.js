@@ -1,4 +1,3 @@
-
 var markdown = require('marked'),
   semver = require('semver');
 
@@ -120,7 +119,8 @@ module.exports = function(grunt) {
         options: {
           "mozilla-addon-sdk": "devtools",
           extension_dir: "dist/firefox",
-          command: "run"
+          command: "run",
+          arguments: "-o"
         }
       }
     },
@@ -130,7 +130,7 @@ module.exports = function(grunt) {
           "mozilla-addon-sdk": "devtools",
           extension_dir: "dist/firefox",
           dist_dir: "tmp/xpi",
-	  arguments: "--strip-sdk"
+	  arguments: "-o"
         }
       }
     },
