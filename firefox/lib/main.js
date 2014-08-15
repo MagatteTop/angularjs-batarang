@@ -8,7 +8,7 @@ const AngularBatarangPanel = Class({
   label: "AngularJS",
   tooltip: "Angular Batarang",
   icon: "./img/webstore-icon.png",
-  url: "./devtool-panel.html",
+  url: "./panel.html",
   setup: function({debuggee}) {
     this.debuggee = debuggee;
   },
@@ -43,7 +43,6 @@ var angularPageMod = pageMod.PageMod({
   }
 });
 
-
 /************************************
   SIDEBAR
 ************************************/
@@ -55,24 +54,6 @@ const {
   unregisterInspectorSidebar
 } = require("register-sidebar-addons");
 
-let { get: getPref, set: setPref } = require("sdk/preferences/service");
-
-let prefs = require("sdk/preferences/event-target").PrefsTarget({
-});
-
-prefs.on("devtools." + AngularBatarangPanel.prototype.id + ".enabled", function (name) {
-  let enabled = getPref(name);
-  console.log("DEVTOOLS ANGULAR TOGGLED", enabled);
-
-  if (enabled) {
-    activateSidebar();
-  } else {
-    deactivateSidebar();
-  }
-});
-
-setPref("devtools." + AngularBatarangPanel.prototype.id + ".enabled", true);
-
 function deactivateSidebar() {
   unregisterInspectorSidebar("angular-batarang");
 }
@@ -82,6 +63,7 @@ function activateSidebar() {
     id: "angular-batarang",
     label: "AngularJS",
     evaluatedJavascriptFun: function getAngularPanelContents() {
+      console.log("DEBUG", $0, window.angular);
       if (window.angular && $0) {
         // TODO: can we move this scope export into
         // updateElementProperties
@@ -110,3 +92,37 @@ function activateSidebar() {
     }
   });
 }
+
+/************************************************
+  ENABLE/DISABLE SIDEBAR ON DEVTOOL PREF CHANGE
+************************************************/
+
+const prefName = "devtools." + AngularBatarangPanel.prototype.id + ".enabled";
+
+let { get: getPref, set: setPref } = require("sdk/preferences/service");
+
+let prefs = require("sdk/preferences/event-target").PrefsTarget({});
+
+setPref(prefName, true);
+
+activateSidebar();
+
+prefs.on(prefName, onPrefChange);
+
+function onPrefChange(name) {
+  let enabled = getPref(name);
+  console.log("DEVTOOLS ANGULAR TOGGLED", enabled);
+
+  if (enabled) {
+    activateSidebar();
+  } else {
+    deactivateSidebar();
+  }
+}
+
+activateSidebar();
+
+exports.onUnload = function() {
+  deactivateSidebar();
+  prefs.removeListener(prefName, onPrefChange);
+};

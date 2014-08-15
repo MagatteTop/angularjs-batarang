@@ -3,73 +3,65 @@
 //  - devtools.eval(code,cb): eval javascript code in the inspected window
 //  - devtools.watchRefresh(cb): set inspected window refresh handler
 var devtools = {
+  _activeTab: null,
   connect: function() {
-    // clear old requests weakmap
-    // and refresh listeners set
-    this._pendingRequests.clear();
-    this._refreshListeners.clear();
-
-    // hook receive function to the postMessage handlers
     var self = this;
-    window.addEventListener("message", function(evt) {
-      self._receive(evt);
-    }, false);
+    return Task.spawn(function*() {
+      var event = yield Task.waitForDOMEventListener(window, "message",  (evt) => {
+        !!evt.ports && evt.data === "RDP"
+      });
+      var dbgPort = event.ports[0];
+      var root = yield volcan.connect(dbgPort);
+      var list = yield root.listTabs();
+      var activeTab = list.tabs[list.selected];
+      yield activeTab.attach();
+
+      self._activeTab = activeTab;
+    });
   },
   watchRefresh: function (cb) {
-    if (cb && typeof cb === "function") {
-      this._refreshListeners.add(cb);
-    }
+    var self = this;
+
+    return Task.spawn(function*() {
+      if (!self._activeTab) {
+        yield self.connect();
+      }
+
+      if (cb && typeof cb === "function") {
+        self._activeTab.addEventListener("tabNavigated", (evt) => {
+          console.log("TAB NAVIGATED", evt);
+          if (evt.state == "start") {
+            cb();
+          }
+        });
+      }
+    });
   },
   eval: function (code, cb) {
-    this._request("target-eval", cb, { code: code });
-  },
-  _pendingRequests: new Map(),
-  _refreshListeners: new Set(),
-  _watchRefreshCb: null,
-  _genRequestId: function() {
-    return Date.now() + Math.random().toString(16).slice(4);
-  },
-  _request: function (requestName, cb, data) {
-    var id = this._genRequestId();
-    var req = {
-      cb: cb,
-      msg: {
-        id: id,
-        requestName: requestName,
-        data: data
+    var self = this;
+
+    return Task.spawn(function*() {
+      if (!self._activeTab) {
+        yield self.connect();
       }
-    };
-    if (cb) {
-      this._pendingRequests.set(id, req);
-    }
-    window.parent.postMessage(req.msg, "*");
-  },
-  _receive: function (evt) {
-    var pendingRequests = this._pendingRequests;
 
-    // handle inspected window refresh events
-    if (evt.data.type === "refresh") {
-      this._refreshListeners.forEach(function(cb) {
-        cb(evt.data);
-      });
-      return;
-    }
+      var reply = yield self._activeTab.consoleActor.evaluateJS(code, window.location.toString());
+      var result = null;
+      try {
+        if (typeof reply.state.result == "string") {
+          result = JSON.parse(reply.state.result);
+         }
+       } catch(e) {
+         console.log("ERROR PARSING", reply.state.result, e);
+         result = null;
+       }
 
-    // handle handle request with pending response handlers
-    if (evt.data.id) {
-      var id = evt.data.id;
-      var req = pendingRequests.get(id);
-      pendingRequests.delete(id);
-
-      if (req && req.cb) {
-        req.cb(evt.data.reply);
-        return;
+      if (cb && typeof cb === "function") {
+        cb(result);
       }
-    }
-  }
+    });
+  },
 };
-
-devtools.connect();
 
 // abstraction layer for Firefox Extension APIs
 angular.module('panelApp').value('chromeExtension', {
@@ -99,6 +91,6 @@ angular.module('panelApp').value('chromeExtension', {
   },
 
   sendRequest: function (requestName, cb) {
-    console.log("sendRequest is deprecated and should not be used");
+    console.error("sendRequest is deprecated and should not be used");
   }
 });

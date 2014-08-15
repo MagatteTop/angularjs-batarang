@@ -25,4 +25,19 @@ const spawn = (task, ...args) => {
 }
 exports.spawn = spawn;
 
+const waitForDOMEventListener = (target, type, capture, filter) => new Promise((resolve, reject) => {
+  const listener = event => {
+    if (typeof filter === "function" && !filter(event)) {
+      // ignore events which doesn't match the filter
+      return;
+    }
+
+    target.removeEventListener(type, listener, capture);
+    resolve(event);
+  };
+  target.addEventListener(type, listener, capture);
+});
+
+exports.waitForDOMEventListener = waitForDOMEventListener;
+
 })(Task = {});

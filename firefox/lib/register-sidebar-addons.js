@@ -130,6 +130,13 @@ function buildInspectorSidebar(panel, { id, label, evaluatedJavascriptFun }) {
       }, false);
 
       function onNewNode() {
+        if (!panel.selection || !panel.selection.nodeFront) {
+          // filter empty selections
+          return;
+        }
+
+        let nodeActorID = panel.selection.nodeFront.actorID
+
         webconsoleClient.evaluateJS(
           "(" + evaluatedJavascriptFun.toString() + ")();",
           (res) => {
@@ -139,6 +146,9 @@ function buildInspectorSidebar(panel, { id, label, evaluatedJavascriptFun }) {
             let view = variablesView;
             view.empty();
             view.controller.setSingleVariable(options).expanded;
+          }, {
+            url: require("sdk/self").uri + "/inspector-sidebar/" + id,
+            selectedNodeActor: nodeActorID
           });
       }
     });
