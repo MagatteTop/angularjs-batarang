@@ -10,8 +10,8 @@
     "grunt-zip": "~0.13.0",
     "semver": "~1.1.4",
     "grunt-contrib-copy": "~0.5.0",
-    "grunt-mozilla-addon-sdk": "~0.3.2",
     "grunt-preprocess": "~4.0.0",
-    "grunt-contrib-clean": "~0.5.0"
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-jpm": "git://github.com/rpl/grunt-jpm"
   }
 }

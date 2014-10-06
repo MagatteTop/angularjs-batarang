@@ -1,9 +1,11 @@
 {
-    "preferences": [],
     "name": "angular-batarang",
     "version": "0.4.3",
-    "fullName": "AngularJS Batarang",
-    "id": "angular-batarang",
+    "main": "lib/main.js",
+    "title": "AngularJS Batarang",
     "description": "AngularJS Batarang... Returns on Firefox DevTools. Tool for debugging Angular applications.",
-    "permissions": {"private-browsing": true}
+    "dependencies": {
+       "firefox-devtools": "git://github.com/rpl/firefox-devtools",
+       "firefox-devtools-sidebar-tabs": "git://github.com/rpl/firefox-devtools-sidebar-tabs"
+    }
 }
