@@ -109,27 +109,10 @@ module.exports = function(grunt) {
         dest: 'batarang-release-' + Date.now() + '.zip'
       }
     },
-    "mozilla-addon-sdk": {
-      "1_14": {
-        options: { revision: "1.14" }
-      }
-    },
-    "mozilla-cfx": {
-      run: {
-        options: {
-          "mozilla-addon-sdk": "1_14",
-          extension_dir: "dist/firefox",
-          command: "run"
-        }
-      }
-    },
-    "mozilla-cfx-xpi": {
-      "1_15": {
-        options: {
-          "mozilla-addon-sdk": "1_14",
-          extension_dir: "dist/firefox",
-          dist_dir: "tmp/xpi"
-        }
+    jpm: {
+      options: {
+        src: "./dist/firefox",
+        xpi: "./tmp/xpi"
       }
     },
     clean: ['dist']
@@ -189,14 +172,10 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-preprocess');
-  grunt.loadNpmTasks('grunt-mozilla-addon-sdk');
+  grunt.loadNpmTasks('grunt-jpm');
 
   grunt.registerTask('default', ['bump', 'markdown', 'changelog', 'release',
                                  'copy', 'preprocess:chrome', 'zip']);
-  grunt.registerTask('build_xpi', ['mozilla-addon-sdk',
-                                   'copy', 'preprocess:firefox',
-                                   'mozilla-cfx-xpi']);
-  grunt.registerTask('run_xpi', ['mozilla-addon-sdk',
-                                 'copy', 'preprocess:firefox',
-                                 'mozilla-cfx:run']);
+  grunt.registerTask('build_xpi', ['copy', 'preprocess:firefox', 'jpm:xpi']);
+  grunt.registerTask('run_xpi', ['copy', 'preprocess:firefox', 'jpm:run']);
 };

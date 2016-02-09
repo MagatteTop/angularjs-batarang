@@ -6,14 +6,14 @@
 
 const { Cu } = require("chrome");
 
-Cu.import("resource:///modules/devtools/gDevTools.jsm");
+Cu.import("resource://devtools/client/framework/gDevTools.jsm");
 
 const self = require("sdk/self");
 
-const VARIABLES_VIEW_URL = "chrome://browser/content/devtools/widgets/VariablesView.xul";
+const VARIABLES_VIEW_URL = "chrome://devtools/content/shared/widgets/VariablesView.xul";
 
-Cu.import("resource:///modules/devtools/VariablesView.jsm");
-Cu.import("resource:///modules/devtools/VariablesViewController.jsm");
+Cu.import("resource://devtools/client/shared/widgets/VariablesView.jsm");
+Cu.import("resource://devtools/client/shared/widgets/VariablesViewController.jsm");
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 

@@ -4,7 +4,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 // Register DevTools Tab
 
-Cu.import("resource:///modules/devtools/gDevTools.jsm");
+Cu.import("resource://devtools/client/framework/gDevTools.jsm");
 
 let devtoolTabDefinition = require("./devtool-panel").devtoolTabDefinition;
 

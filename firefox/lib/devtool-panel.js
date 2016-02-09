@@ -7,14 +7,13 @@ const Tab = require("sdk/tabs/tab-firefox").Tab;
 const {
   registerInspectorSidebar,
   unregisterInspectorSidebar
-} = require("register-sidebar-addons");
+} = require("./register-sidebar-addons");
 
 const { Cu } = require("chrome");
 
 let { get: getPref } = require("sdk/preferences/service")
 
-let prefs = require("sdk/preferences/event-target").PrefsTarget({
-});
+let prefs = require("sdk/preferences/event-target").PrefsTarget({});
 
 prefs.on("devtools.angular-batarang.enabled", function (name) {
   let enabled = getPref(name);
